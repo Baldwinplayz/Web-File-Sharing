@@ -147,7 +147,7 @@ def qrcode_img():
     img = qr.make_image()
 
     buffer = BytesIO()
-    img.save(buffer, format='PNG')
+    img.save(buffer)
     buffer.seek(0)
 
     return send_file(buffer, mimetype='image/png')
