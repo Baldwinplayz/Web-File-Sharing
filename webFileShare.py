@@ -156,6 +156,6 @@ if __name__ == "__main__":
     if is_PASSWORD:
         print(colored("##################################################", "cyan"))
         print(colored(f"Password is: {password}", "green"))
-        print(colored("User this link with the password pre inputed: ", "blue") + colored(f"https://{HOST}:{str(PORT)}/?p={urllib.parse.quote(password)}", "red"))
+        print(colored("Use this link with the password, pre inputed: ", "blue") + colored(f"https://{HOST}:{str(PORT)}/?p={urllib.parse.quote(password)}", "red"))
         print(colored("##################################################\n", "cyan"))
     app.run(host=HOST, port=PORT, ssl_context="adhoc")
