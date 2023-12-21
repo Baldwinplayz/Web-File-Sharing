@@ -2,7 +2,7 @@
 This is a python flask app that can share files and text using the https protocol. This uses the flask adhoc certificate so you will have to install pyopenssl. The point of having this and not using the alternatives like airdrop or nearby share which have not been adopted universally, we decided to use the http protocol which is already widespread. 
 
 1. Install the dependencies
-   run `pip install flask html pyopenssl`
+   run `pip install flask | pip install html | pip install pyopenssl`
 2. Go to the file named webFileShare.py and change the variables `file_location` and `text_copy` to what they correspond.
    * `file_location`: the directory starting from where the file is run until the file you want to share.
    * `text_copy`: the text you want them to recieve or copy.
