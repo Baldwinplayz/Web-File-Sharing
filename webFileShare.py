@@ -4,14 +4,14 @@ import random
 
 # VARIABLES
 # If empty string then it will be disabled
-file_location = "webFileShare.py"
-text_copy = "Hello, world!"
+file_location = ""
+text_copy = ""
 #PASSWORD, True or False, password is a string
 is_PASSWORD = True
 password = "" # If left blank a 4 digit password will be generated
 
 if is_PASSWORD and not password:
-    password = str(round(random.randint(0, 9999)))
+    password = f"{str(round(random.randint(0, 9999))):0>4}"
 
 def is_file_location():
     if file_location.strip():
@@ -40,7 +40,7 @@ def is_hr():
         return ""
     else:
         return "<hr></hr>"
-    
+
 def is_empty():
     if file_location.strip() == "" and text_copy.strip() == "":
             return "<h1 style='text-align: center; color: #fff;'>Looks like nothing has been shared with you :(</h1><img src='https://media.tenor.com/9zmtHZ0tIjkAAAAi/nyancat-rainbow-cat.gif' width=300 style='display: block; margin-left: auto; margin-right: auto; width: 50%; max-width: 500px; margin-top: 200px'>"
@@ -128,4 +128,4 @@ def text():
 if __name__ == "__main__":
     if is_PASSWORD:
         print(f"Password is: {password}")
-    app.run(host="0.0.0.0", port=3333, ssl_context="adhoc")
+    app.run(host="0.0.0.0", port=8000, ssl_context="adhoc")
