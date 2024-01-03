@@ -10,6 +10,6 @@ This is a python flask app that can share files and text using the https protoco
    * `is_PASSWORD`: set this to `True` if you want passwords enabled, if no password is specified then a integer from 0 to 9999 is assigned.
    * `password`: This variable is the passowrd you want to assign, if it is empty then a random one is assigned.
 3. Run the webFileShare.py file using python3, for example `python3 webFileShare`
-   * The terminal will output the classical flask interface, look for the one that is not your localhost (usually 127.0.0.1) and share this url with the person you want to share with.
-   * Don't forget to share the password if enabled, if you do share the password add it as a parameter in the url, for example `localhost:8000?p=9999`.
+   * The terminal will output modified flask interface, look for the link and share this url with the person you want to share with, you can enter the link and you will see a qrcode to share.
+   * Don't forget to share the password if enabled, if you do share the password add it as a parameter in the url, for example `localhost:8000?p=9999`, but if you use the qrcode the password is pre-inputed.
 
