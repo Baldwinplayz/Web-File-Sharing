@@ -1,4 +1,25 @@
-from flask import Flask, send_file, request, abort
+"""
+Copyright (c) 2023 Baldwin Huang
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""
+from flask import Flask, send_file, request, abort, jsonify
 import html
 import random
 import qrcode
@@ -6,24 +27,34 @@ import psutil
 import urllib.parse
 from io import BytesIO
 from termcolor import colored
+import os.path
+from werkzeug.utils import secure_filename
+import logging
 
 # VARIABLES
 # If empty string then it will be disabled
 file_location = "webFileShare.py"
-text_copy = "Hello world! Special Characters >>> !@#$%^&*()_+-={}:\"<<?:\\"
+text_copy = "Test"
 #PASSWORD, True or False, password is a string
 is_PASSWORD = True
-password = "" # If left blank a 4 digit password will be generated
-
+password = ""  # If left blank a 6 digit password will be generated
 # Hosting configuration
-HOST = "0.0.0.0" # Just in case no host is found, if no host is found then you can not use qr codes
+HOST = ""
 for i in [addr.address for interface, addrs in psutil.net_if_addrs().items() for addr in addrs if addr.family == 2]:
             if i != "127.0.0.1":
                 HOST = i
 PORT = 8000
 
+if HOST == "":
+    raise("No host found, please check for a wifi connection, if none can be found try with you own wifi hotspot.")
+
 if is_PASSWORD and not password:
-    password = f"{str(round(random.randint(0, 9999))):0>4}"
+    password = f"{str(round(random.randint(0, 999999))):0>6}"
+
+if not is_PASSWORD:
+    print(colored("##################################################", "cyan"))
+    print(colored("Use this link to enter and share: ", "blue") + colored(f"https://{HOST}:{str(PORT)}/", "red"))
+    print(colored("##################################################", "cyan"))
 
 def is_file_location():
     if file_location.strip():
@@ -60,6 +91,7 @@ def is_empty():
         return f"<legend style='margin-top: 100px'>Share it with others (Scan):</legend><img src='/qrcode?p={urllib.parse.quote(password)}' width=300 style='display: block; margin: 8px;margin-left: auto; margin-right: auto; width: 70%; max-width: 400px;'>"
 
 app = Flask(__name__)
+logging.getLogger('werkzeug').disabled = True
 
 @app.route("/")
 def index():
@@ -121,6 +153,9 @@ def index():
             
         }
     </script>
+    <footer style="position: fixed; bottom: 0; border: 2px solid #21262d; background-color: #21262d;">
+        <code>Share a file <a href='/submit?p=""" + urllib.parse.quote(password) + """'>here</a>, or download a copy of the software <a href="https://github.com/Baldwinplayz/Web-File-Sharing">here</a></code>
+    </footer>
 </body>
 </html>
 """
@@ -152,10 +187,175 @@ def qrcode_img():
 
     return send_file(buffer, mimetype='image/png')
 
+@app.route("/submit")
+def submit():
+     if is_PASSWORD and request.args.get("p") != password:
+        abort(403)
+     return """
+<html data-lt-installed="true">
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+            body {
+                font-family: monospace;
+                font-weight: 400;
+                background-color: #21262d;
+            }
+            .codeSnippet {
+                background-color: #202531;
+                margin: 8px;
+                padding: 15px;
+                border: solid 6.4px #353c4c;
+                color: #fff;
+            }
+            .codeSnippet:hover{
+                background-color: #353c4c;
+            }
+            code, legend {
+                color: #fff;
+            }
+            a {
+                color: #fff;
+            }
+            button {
+                width: 25.5px;
+                height: 25.5px;
+                text-align: center;
+            }
+            svg {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+            .textarea {
+                display: block;
+                color: #fff;
+                background-color: #202531;
+                width: 100%;
+                height: auto;
+                resize: vertical;
+                overflow: auto;
+            }
+            .textarea:hover {
+                background-color: #353c4c;
+            }
+        </style>
+    </head>
+    <body> 
+        <legend>Submit Attachment: </legend>
+        <form action="/submitFile" method="post" enctype="multipart/form-data">
+            <div class="codeSnippet" id="parentBox" style="display: flex;">
+                <input style="display: none;" type="file" name="submited-file" id="submitFile" multiple="">
+                </input>
+                <p style="color: #fff; margin: 0; width: 50%;">Submit File</p>
+                <p id="selectedFiles" style="color: aqua; margin: 0; text-align: right; width: 50%;"></p>
+            </div>
+        </form>
+        <script>
+            var submitFile = document.querySelector("#submitFile");
+            var parentBox = document.querySelector("#parentBox");
+            var selectedFiles = document.querySelector("#selectedFiles");
+            
+            submitFile.onchange = function() {
+
+                var files = submitFile.files;
+
+                switch (files.length) {
+                    case 1:
+                    selectedFiles.textContent = files[0]["name"];
+                    break;
+
+                    default:
+                    selectedFiles.textContent = `${files[0]["name"]} & another ${files.length - 1}`;
+                }
+            }
+
+            parentBox.addEventListener("click", function() {
+                submitFile.click();
+            });
+        </script>
+        <hr> 
+        <legend>Submit Text: </legend>
+        <div id="codeSnippet" class="codeSnippet" contentEditable="" spellcheck="false"></div>
+        <hr>
+        <div id="codeSnippet" class="codeSnippet" style="margin-top: 15px;" onclick="submit()">
+            <p style="text-align: center; margin: 0; color: #fff;">Submit!!!</p>
+        </div>
+        <script>
+            function submit() {
+                var submitFile = document.querySelector("#submitFile");
+                var text = document.getElementById("codeSnippet");
+                if (submitFile.files.length > 0) {
+                    const formData = new FormData();
+                    for (const file of submitFile.files) {
+                        formData.append('file', file, file.name);
+                    }
+
+                    fetch('/submitFile?p=""" + urllib.parse.quote(password) + """', {
+                        method: 'POST',
+                        body: formData
+                        }).then(response => response.json()).then(data => {
+                    console.log(data);
+                    }).catch(error => {
+                    console.error('Error:', error);
+                    });
+                }
+                if (text.textContent.length > 0) {
+                    fetch('/submitText?p=""" + urllib.parse.quote(password) + """', {
+                        method: 'POST',
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({"text": text.textContent})
+                        }).then(response => response.json()).then(data => {
+                    console.log(data);
+                    }).catch(error => {
+                    console.error('Error:', error);
+                    });
+                }
+                alert("Form Submited!!!");
+            }
+        </script>
+        <footer style="position: fixed; bottom: 0; border: 2px solid #21262d; background-color: #21262d;">
+            <code>Go back <a href='/?p=""" + urllib.parse.quote(password) + """'>here</a>, or download a copy of the software <a href="https://github.com/Baldwinplayz/Web-File-Sharing">here</a></code>
+        </footer>
+    </body>
+</html>
+"""
+
+
+@app.route('/submitFile', methods=["GET", "POST"])
+def submit_file():
+    if is_PASSWORD and request.args.get("p") != password:
+        abort(403)
+    files = next(request.files.lists())[1]
+    for thing in files:
+        consent = input(colored(f"Save {thing} from {colored(request.remote_addr, 'red')}, {colored('[y/n]', 'green')}", 'blue')).lower()
+        print()
+        if consent == "y":
+            filename = secure_filename(thing.filename)
+            thing.save(os.path.join(os.getcwd(), filename))
+    return jsonify({"status": "sent"})
+
+@app.route('/submitText', methods=["GET", "POST"])
+def submit_text():
+    if is_PASSWORD and request.args.get("p") != password:
+        abort(403)
+    try:
+        if input(colored(f"Print {len(request.json['text'])} characters from {colored(request.remote_addr, 'red')}, {colored('[y/n]', 'green')}", 'blue')).lower() == "y":
+            print(request.json["text"])
+            print()
+        else:
+            print(colored("Cancelled", "green"))
+    except:
+         abort(400)
+    return jsonify({"status": "sent"})
+
+
 if __name__ == "__main__":
     if is_PASSWORD:
         print(colored("##################################################", "cyan"))
         print(colored(f"Password is: {password}", "green"))
         print(colored("Use this link with the password pre inputed: ", "blue") + colored(f"https://{HOST}:{str(PORT)}/?p={urllib.parse.quote(password)}", "red"))
-        print(colored("##################################################\n", "cyan"))
+        print(colored("##################################################", "cyan"))
     app.run(host=HOST, port=PORT, ssl_context="adhoc")
