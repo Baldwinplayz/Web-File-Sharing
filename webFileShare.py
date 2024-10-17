@@ -33,8 +33,9 @@ import logging
 
 # VARIABLES
 # If empty string then it will be disabled
-file_location = "webFileShare.py"
-text_copy = "Test"
+text_copy = ""
+file_location = "History Presentation.mp4"
+video_path = ""
 #PASSWORD, True or False, password is a string
 is_PASSWORD = True
 password = ""  # If left blank a 6 digit password will be generated
@@ -56,6 +57,19 @@ if not is_PASSWORD:
     print(colored("Use this link to enter and share: ", "blue") + colored(f"https://{HOST}:{str(PORT)}/", "red"))
     print(colored("##################################################", "cyan"))
 
+def is_text_copy():
+    if text_copy.strip():
+        return f"""
+    <legend>Text (Click to copy): </legend>
+    <div id="codeSnippet" class="codeSnippet" onclick="myFunction()">
+        <code id="code"> {html.escape(text_copy)} 
+        </code>
+        <span class="tooltiptext">Copy text</span>
+    </div>
+    """
+    else:
+        return ""
+    
 def is_file_location():
     if file_location.strip():
         return f"""
@@ -63,29 +77,34 @@ def is_file_location():
     <div class="codeSnippet" onclick="window.open('file?p={urllib.parse.quote(password)}', '_blank');">
         <code>Download file</code>
     </div>
-"""
+    """
     else:
         return ""
-def is_text_copy():
-    if text_copy.strip():
-        return """
-    <legend>Text (Click to copy): </legend>
-    <div id="codeSnippet" class="codeSnippet" onclick="myFunction()">
-        <code id="code">""" + html.escape(text_copy) + """
-        </code>
-        <span class="tooltiptext">Copy text</span>
-    </div>
-"""
+
+def is_video_path():
+    if video_path.strip():
+        return f"""
+    <video style="display: flex; justify-content: center; align-items: center; width: 100%;" controls>
+        <source src="/video?p={urllib.parse.quote(password)}" type="video/mp4">
+    </video>
+    """
     else:
         return ""
-def is_hr():
+    
+def is_hr_video():
+    if file_location.strip() == "" and text_copy.strip() == "":
+        return ""
+    else:
+        return "<hr></hr>"
+    
+def is_hr_file():
     if file_location.strip() == "" or text_copy.strip() == "":
         return ""
     else:
         return "<hr></hr>"
     
 def is_empty():
-    if file_location.strip() == "" and text_copy.strip() == "":
+    if file_location.strip() == "" and text_copy.strip() == "" and video_path.strip() == "":
         return "<h1 style='text-align: center; color: #fff;'>Looks like nothing has been shared with you :(</h1><img src='https://media.tenor.com/9zmtHZ0tIjkAAAAi/nyancat-rainbow-cat.gif' width=300 style='display: block; margin-left: auto; margin-right: auto; width: 50%; max-width: 500px; margin-top: 200px'>"
     else:
         return f"<legend style='margin-top: 100px'>Share it with others (Scan):</legend><img src='/qrcode?p={urllib.parse.quote(password)}' width=300 style='display: block; margin: 8px;margin-left: auto; margin-right: auto; width: 70%; max-width: 400px;'>"
@@ -143,7 +162,7 @@ def index():
         }
     </style>
 </head>
-<body> """ + is_file_location() + """ """ + is_hr() + """ """ + is_text_copy() + """ """ + is_empty() + """
+<body> """ + is_video_path() + """ """ + is_hr_video() + """ """ + is_file_location() + """ """ + is_hr_file() + """ """ + is_text_copy() + """ """ + is_empty() + """
     <script>
         function myFunction() {
             var text = document.querySelector("#code").textContent;
@@ -159,6 +178,11 @@ def index():
 </body>
 </html>
 """
+@app.route("/text")
+def text():
+    if is_PASSWORD and request.args.get("p") != password:
+        abort(403)
+    return text_copy
 
 @app.route("/file")
 def file():
@@ -166,11 +190,11 @@ def file():
         abort(403)
     return send_file(file_location, as_attachment=True)
 
-@app.route("/text")
-def text():
+@app.route("/video")
+def video():
     if is_PASSWORD and request.args.get("p") != password:
         abort(403)
-    return text_copy
+    return send_file(video_path, as_attachment=True)
 
 @app.route("/qrcode")
 def qrcode_img():
