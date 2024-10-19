@@ -33,7 +33,7 @@ import logging
 
 # VARIABLES
 # If empty string then it will be disabled
-text_copy = ""
+text_copy = "History Presentation.mp4"
 file_location = "History Presentation.mp4"
 video_path = ""
 #PASSWORD, True or False, password is a string
@@ -92,10 +92,10 @@ def is_video_path():
         return ""
     
 def is_hr_video():
-    if file_location.strip() == "" and text_copy.strip() == "":
-        return ""
-    else:
+    if video_path != "" and (file_location.strip() != "" or text_copy.strip() != ""):
         return "<hr></hr>"
+    else:
+        return ""
     
 def is_hr_file():
     if file_location.strip() == "" or text_copy.strip() == "":
