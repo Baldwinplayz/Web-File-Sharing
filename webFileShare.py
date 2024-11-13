@@ -32,10 +32,11 @@ from werkzeug.utils import secure_filename
 import logging
 
 # VARIABLES
+forum_post = list()
 # If empty string then it will be disabled
-text_copy = "History Presentation.mp4"
-file_location = "History Presentation.mp4"
-video_path = ""
+text_copy = "fjsd;lakfj"
+file_location = "webFileShare.py"
+video_path = "L.E._News_Broadcast.mp4"
 #PASSWORD, True or False, password is a string
 is_PASSWORD = True
 password = ""  # If left blank a 6 digit password will be generated
@@ -173,7 +174,7 @@ def index():
         }
     </script>
     <footer style="position: fixed; bottom: 0; border: 2px solid #21262d; background-color: #21262d;">
-        <code>Share a file <a href='/submit?p=""" + urllib.parse.quote(password) + """'>here</a>, or download a copy of the software <a href="https://github.com/Baldwinplayz/Web-File-Sharing">here</a></code>
+        <code>Share a file <a href='/submit?p=""" + urllib.parse.quote(password) + """'>here</a>, download a copy of the software <a href="https://github.com/Baldwinplayz/Web-File-Sharing">here</a>, or go to the forum <a href="/forum?p=""" + urllib.parse.quote(password) + """" >here</a></code>
     </footer>
 </body>
 </html>
@@ -195,6 +196,97 @@ def video():
     if is_PASSWORD and request.args.get("p") != password:
         abort(403)
     return send_file(video_path, as_attachment=True)
+
+@app.route("/forum")
+def forum():
+    if is_PASSWORD and request.args.get("p") != password:
+        abort(403)
+    hyper_text = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+            body {
+                font-family: monospace;
+                font-weight: 400;
+                background-color: #21262d;
+            }
+            .codeSnippet {
+                background-color: #202531;
+                margin: 8px;
+                padding: 15px;
+                border: solid 6.4px #353c4c;
+            }
+            .tooltiptext {
+                visibility: hidden;
+                color: aqua;
+            }
+            .codeSnippet:hover{
+                background-color: #353c4c;
+            }
+            .codeSnippet:hover > .tooltiptext{
+                visibility: visible;
+            }
+            code, legend {
+                color: #fff;
+                text-align: center;
+            }
+            a {
+                color: #fff;
+            }
+            button {
+                width: 25.5px;
+                height: 25.5px;
+                text-align: center;
+            }
+            svg {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+        </style>
+    </head>
+    <body>
+        <h1 style="text-align: center; color: #fff;">Content: </h1>
+    """
+    i = 0
+    for post in forum_post:
+        if post[0] == "text":
+            hyper_text += f"""<div id="codeSnippet" class="codeSnippet" onclick="myFunction(this)">
+                                <code id="code"> {html.escape(post[1])} </code>
+                                <span class="tooltiptext">Copy text</span>
+                            </div>"""
+        elif post[0] == "file":
+            hyper_text += f"""<div class="codeSnippet" onclick="window.open('file/{str(i)}?p={urllib.parse.quote(password)}', '_blank');">
+                                <code>Download: {html.escape(post[1])}</code>
+                            </div>
+                            """
+        i += 1
+    hyper_text += """
+                    <script>
+                        function myFunction(node) {
+                            let text = node.querySelector("#code").textContent;
+                            navigator.clipboard.writeText(text).then(function() {
+                                alert("Copied the text: " + text);
+                            });
+                            
+                        }
+                    </script>
+                    <footer style="position: fixed; bottom: 0; border: 2px solid #21262d; background-color: #21262d;">
+                        <code>Go back <a href='/?p=""" + urllib.parse.quote(password) + """'>here</a>, or download a copy of the software <a href="https://github.com/Baldwinplayz/Web-File-Sharing">here</a></code>
+                    </footer>
+                </body>
+                </html>"""
+    return hyper_text
+
+@app.route("/file/<index>")
+def file_name(index):
+    if is_PASSWORD and request.args.get("p") != password:
+        abort(403)
+    if int(index) >= len(forum_post):
+        abort(404)
+    return send_file(forum_post[int(index)][1], as_attachment=True)
 
 @app.route("/qrcode")
 def qrcode_img():
@@ -354,11 +446,12 @@ def submit_file():
         abort(403)
     files = next(request.files.lists())[1]
     for thing in files:
-        consent = input(colored(f"Save {thing} from {colored(request.remote_addr, 'red')}, {colored('[y/n]', 'green')}", 'blue')).lower()
+        consent = input(colored(f"Save {thing} from {colored(request.remote_addr, 'red')} {colored("(will overwrite existing files)", 'blue')}, {colored('[y/n]:', 'green')}", 'blue')).lower()
         print()
         if consent == "y":
             filename = secure_filename(thing.filename)
             thing.save(os.path.join(os.getcwd(), filename))
+            forum_post.append(['file', filename])
     return jsonify({"status": "sent"})
 
 @app.route('/submitText', methods=["GET", "POST"])
@@ -369,6 +462,7 @@ def submit_text():
         if input(colored(f"Print {len(request.json['text'])} characters from {colored(request.remote_addr, 'red')}, {colored('[y/n]', 'green')}", 'blue')).lower() == "y":
             print(request.json["text"])
             print()
+            forum_post.append(['text', request.json['text']])
         else:
             print(colored("Cancelled", "green"))
     except:
