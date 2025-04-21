@@ -34,9 +34,9 @@ import logging
 # VARIABLES
 forum_post = list()
 # If empty string then it will be disabled
-text_copy = "fjsd;lakfj"
+text_copy = "Lorem Ipsum"
 file_location = "webFileShare.py"
-video_path = "L.E._News_Broadcast.mp4"
+video_path = "Lorem Ipsum.mp4"
 #PASSWORD, True or False, password is a string
 is_PASSWORD = True
 password = ""  # If left blank a 6 digit password will be generated
